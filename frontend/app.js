@@ -25,6 +25,7 @@ let micLevelData = null;
 let playAnalyser = null;
 let playLevelData = null;
 let activePlaySources = 0;
+let isListening = false;
 
 // ---------- connection ----------
 
@@ -70,8 +71,10 @@ function onMessage(ev) {
   } else if (m.type === "error") {
     addMsg("⚠ " + m.content, "ai");
   } else if (m.type === "status") {
+    // While the user is actively holding the mic, our local "listening" state wins.
+    if (isListening) return;
     $("status").textContent = m.state === "idle" || !m.state
-      ? "tap to speak"
+      ? "tap the orb to speak"
       : m.state + (m.detail ? " – " + m.detail : "");
     // Enforce turn-taking client-side: block the mic while the AI is busy.
     $("mic").disabled = (m.state === "thinking" || m.state === "speaking");
@@ -160,12 +163,22 @@ function sendText() {
 $("send").onclick = sendText;
 $("text").addEventListener("keydown", (e) => { if (e.key === "Enter") sendText(); });
 
-// ---------- mic: hold to talk ----------
+// ---------- mic: tap to start/stop listening ----------
 
 async function startMic() {
-  if (!ws || ws.readyState !== 1) return;
-  micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  if (isListening) return;
+  if (!ws || ws.readyState !== 1) {
+    $("status").textContent = "connect first (open settings ⚙)";
+    return;
+  }
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    $("status").textContent = "mic blocked — allow microphone access";
+    return;
+  }
   const ctx = (audioCtx ||= new AudioContext());
+  if (ctx.state === "suspended") await ctx.resume();
   micSampleRate = ctx.sampleRate;
   const source = ctx.createMediaStreamSource(micStream);
 
@@ -184,20 +197,33 @@ async function startMic() {
   procNode.onaudioprocess = (e) => {
     if (ws && ws.readyState === 1) ws.send(e.inputBuffer.getChannelData(0).slice().buffer);
   };
+
+  // Immediate local feedback — don't wait for a backend status message.
+  isListening = true;
+  setOrbState("listening");
+  $("mic").classList.add("recording");
+  $("status").textContent = "listening… tap again to send";
 }
 
 function stopMic() {
+  if (!isListening) return;
   if (procNode) { procNode.disconnect(); procNode.onaudioprocess = null; procNode = null; }
   if (micStream) { micStream.getTracks().forEach((t) => t.stop()); micStream = null; }
   if (micAnalyser) { micAnalyser.disconnect(); micAnalyser = null; }
   if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "audio_end", sample_rate: micSampleRate }));
+  isListening = false;
+  setOrbState("idle");
+  $("mic").classList.remove("recording");
+  $("status").textContent = "sent — waiting for reply…";
 }
 
-$("mic").addEventListener("mousedown", startMic);
-$("mic").addEventListener("mouseup", stopMic);
-$("mic").addEventListener("mouseleave", () => { if (micStream) stopMic(); });
-$("mic").addEventListener("touchstart", (e) => { e.preventDefault(); startMic(); });
-$("mic").addEventListener("touchend", (e) => { e.preventDefault(); stopMic(); });
+function toggleMic() {
+  if (isListening) stopMic();
+  else startMic();
+}
+
+$("mic").addEventListener("click", toggleMic);
+$("orb").addEventListener("click", toggleMic);
 
 function micLevel() {
   if (!micAnalyser || !micLevelData) return 0;
@@ -391,4 +417,4 @@ if (new URLSearchParams(location.search).has("demo")) {
 
 applyMood(cfg.mood);
 setOrbState("idle");
-$("status").textContent = "tap to speak";
+$("status").textContent = "tap the orb to speak";
