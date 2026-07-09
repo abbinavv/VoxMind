@@ -189,7 +189,7 @@ async function startMic() {
 function stopMic() {
   if (procNode) { procNode.disconnect(); procNode.onaudioprocess = null; procNode = null; }
   if (micStream) { micStream.getTracks().forEach((t) => t.stop()); micStream = null; }
-  micAnalyser = null;
+  if (micAnalyser) { micAnalyser.disconnect(); micAnalyser = null; }
   if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "audio_end", sample_rate: micSampleRate }));
 }
 
