@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-let ws = null, audioCtx = null, micStream = null, procNode = null;
+let ws = null, audioCtx = null, micStream = null, procNode = null, micSampleRate = 48000;
 let cfg = { mood: "calm", pitch: null, bass: null, rate: null };
 let playSr = 22050;
 
@@ -29,6 +29,7 @@ function onMessage(ev) {
   else if (m.type === "reply_text") addMsg(m.content, "ai");
   else if (m.type === "audio_start") playSr = m.sample_rate;
   else if (m.type === "error") addMsg("⚠ " + m.content, "ai");
+  else if (m.type === "status") $("status").textContent = m.state + (m.detail ? " – " + m.detail : "");
 }
 
 function playPcm(buf) {
@@ -66,22 +67,16 @@ function sendText() {
 $("send").onclick = sendText;
 $("text").addEventListener("keydown", (e) => { if (e.key === "Enter") sendText(); });
 
-// Mic: hold to talk, stream Float32 chunks, send audio_end on release
-//
-// NOTE on sample rate (deliberately deferred to Task 9, do not "fix" here):
-// startMic uses the browser's default AudioContext sample rate (often 44.1/48 kHz),
-// but the backend's audio_end handler currently resamples assuming 48000 Hz.
-// During Task 9, confirm the real context rate (audioCtx.sampleRate) and either
-// force `new AudioContext({ sampleRate: 48000 })` or send the actual rate in the
-// audio_end message and use it backend-side. Resolve this mismatch before
-// claiming voice input works end-to-end.
+// Mic: hold to talk; streams Float32 chunks, sends audio_end with the capture sample rate.
 async function startMic() {
   if (!ws || ws.readyState !== 1) return;
   micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   const ctx = (audioCtx ||= new AudioContext());
+  micSampleRate = ctx.sampleRate;
   const source = ctx.createMediaStreamSource(micStream);
   procNode = ctx.createScriptProcessor(4096, 1, 1);
-  source.connect(procNode); procNode.connect(ctx.destination);
+  const sink = ctx.createGain(); sink.gain.value = 0;
+  source.connect(procNode); procNode.connect(sink); sink.connect(ctx.destination);
   drawWave(source, ctx);
   procNode.onaudioprocess = (e) => {
     if (ws && ws.readyState === 1) ws.send(e.inputBuffer.getChannelData(0).slice().buffer);
@@ -90,7 +85,7 @@ async function startMic() {
 function stopMic() {
   if (procNode) { procNode.disconnect(); procNode.onaudioprocess = null; procNode = null; }
   if (micStream) { micStream.getTracks().forEach((t) => t.stop()); micStream = null; }
-  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "audio_end" }));
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "audio_end", sample_rate: micSampleRate }));
 }
 $("mic").addEventListener("mousedown", startMic);
 $("mic").addEventListener("mouseup", stopMic);

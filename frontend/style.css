@@ -115,6 +115,12 @@ button:active { transform: translateY(1px); }
   .dot.on { animation: none; }
 }
 
+.status {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
 main {
   max-width: 760px;
   margin: 0 auto;

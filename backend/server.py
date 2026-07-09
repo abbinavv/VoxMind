@@ -52,7 +52,8 @@ def create_app(stt: SttEngine, llm: LlmClient, tts: TtsEngine) -> FastAPI:
                     elif data["type"] == "audio_end":
                         pcm = np.frombuffer(bytes(audio_buf), dtype=np.float32)
                         audio_buf.clear()
-                        text = stt.transcribe(pcm, sr=48000)
+                        sr = int(data.get("sample_rate") or 48000)
+                        text = stt.transcribe(pcm, sr=sr)
                         if not text:
                             await sock.send_text(protocol.status("idle", "no speech detected"))
                             continue
