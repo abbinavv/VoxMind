@@ -276,8 +276,18 @@ function drawFrame() {
   const thinking = orbState === "thinking";
   const speaking = orbState === "speaking";
 
+  // Audio levels ADD intensity on top of a guaranteed base motion, so each
+  // state is clearly animated even if the analyser reads near-zero.
   const mLevel = listening ? Math.min(1, micLevel() * 6) : 0;
   const pLevel = speaking ? Math.min(1, playLevel() * 6) : 0;
+  // Time-based base oscillators (always moving while in an active state).
+  // Reduced motion keeps a calmer, lower-amplitude version rather than freezing.
+  const amp = reduceMotion ? 0.35 : 1;
+  const t = frame * 0.05;
+  const listenBase = 0.35 + 0.35 * amp * (0.5 + 0.5 * Math.sin(t)); // gentle breathing
+  const speakBase = 0.45 + 0.55 * amp * Math.abs(Math.sin(t * 1.6)); // livelier pulse
+  const listenLevel = listening ? Math.max(listenBase, mLevel) : 0;
+  const speakLevel = speaking ? Math.max(speakBase, pLevel) : 0;
 
   const aura = currentAura();
 
@@ -286,22 +296,20 @@ function drawFrame() {
     let alpha = s.baseAlpha;
     let size = s.size;
 
-    if (thinking && !reduceMotion) {
-      // Swirling galaxy: rotation speed grows with radius.
-      angle += frame * 0.002 * (0.3 + s.radius / 160);
+    if (thinking) {
+      // Swirling galaxy: rotation grows with radius (always visible, time-driven).
+      angle += frame * 0.01 * (0.4 + s.radius / 120);
     }
-    if (listening && !reduceMotion) {
-      alpha = s.baseAlpha * (0.5 + mLevel * 0.9);
-      size = s.size * (1 + mLevel * 0.6);
+    if (listening) {
+      alpha = s.baseAlpha * (0.5 + listenLevel * 0.9);
+      size = s.size * (1 + listenLevel * 0.6);
     }
-    if (speaking && !reduceMotion) {
-      alpha = s.baseAlpha * (0.6 + pLevel * 1.2);
-      size = s.size * (1 + pLevel * 1.1);
-      angle += Math.sin(frame * 0.05 + s.radius) * pLevel * 0.02;
+    if (speaking) {
+      alpha = s.baseAlpha * (0.6 + speakLevel * 1.2);
+      size = s.size * (1 + speakLevel * 1.1);
+      angle += Math.sin(frame * 0.05 + s.radius) * speakLevel * 0.05;
     }
-    if (!reduceMotion) {
-      alpha *= 0.75 + 0.25 * Math.sin(frame * 0.03 + s.twinkle);
-    }
+    alpha *= 0.75 + 0.25 * Math.sin(frame * 0.03 + s.twinkle);
 
     const x = cx + Math.cos(angle) * s.radius;
     const y = cy + Math.sin(angle) * s.radius;
@@ -315,34 +323,28 @@ function drawFrame() {
 
   // Orb glow / scale reaction
   const orb = $("orb");
-  if (!reduceMotion) {
-    if (listening) {
-      const glow = 40 + mLevel * 60;
-      orb.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 ${glow}px -6px ${aura}, 0 30px 80px -30px rgba(0,0,0,0.9)`;
-      orb.style.transform = "scale(1)";
-    } else if (speaking) {
-      const scale = 1 + pLevel * 0.06;
-      const glow = 50 + pLevel * 90;
-      orb.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 ${glow}px -4px ${aura}, 0 30px 80px -30px rgba(0,0,0,0.9)`;
-      orb.style.transform = `scale(${scale})`;
-    } else if (thinking) {
-      orb.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 55px -8px ${aura}, 0 30px 80px -30px rgba(0,0,0,0.9)`;
-      orb.style.transform = "scale(1)";
-    } else {
-      orb.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 30px -10px ${aura}, 0 30px 80px -30px rgba(0,0,0,0.9)`;
-      orb.style.transform = "scale(1)";
-    }
+  if (listening) {
+    const glow = 45 + listenLevel * 55;
+    const scale = 1 + listenLevel * 0.03;
+    orb.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 ${glow}px -6px ${aura}, 0 30px 80px -30px rgba(0,0,0,0.9)`;
+    orb.style.transform = `scale(${scale.toFixed(4)})`;
+  } else if (speaking) {
+    const scale = 1 + speakLevel * 0.07;
+    const glow = 55 + speakLevel * 85;
+    orb.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 ${glow}px -4px ${aura}, 0 30px 80px -30px rgba(0,0,0,0.9)`;
+    orb.style.transform = `scale(${scale.toFixed(4)})`;
+  } else if (thinking) {
+    const glow = 50 + 20 * (0.5 + 0.5 * Math.sin(t * 0.8));
+    orb.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 ${glow.toFixed(1)}px -8px ${aura}, 0 30px 80px -30px rgba(0,0,0,0.9)`;
+    orb.style.transform = "scale(1)";
+  } else {
+    orb.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.08) inset, 0 0 30px -10px ${aura}, 0 30px 80px -30px rgba(0,0,0,0.9)`;
+    orb.style.transform = "scale(1)";
   }
 
-  if (!reduceMotion || frame === 1) {
-    requestAnimationFrame(drawFrame);
-  }
+  requestAnimationFrame(drawFrame);
 }
 requestAnimationFrame(drawFrame);
-if (reduceMotion) {
-  // Render exactly one static frame representative of idle; do not keep animating.
-  setOrbState("idle");
-}
 
 // ---------- demo mode (?demo=1): preview orb states without a backend ----------
 // Injects a synthetic audio level so listening/speaking visibly react, and adds a
