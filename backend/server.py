@@ -1,4 +1,3 @@
-import json
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from backend import protocol
@@ -44,20 +43,26 @@ def create_app(stt: SttEngine, llm: LlmClient, tts: TtsEngine) -> FastAPI:
                 if "bytes" in msg and msg["bytes"] is not None:
                     audio_buf.extend(msg["bytes"])
                     continue
-                data = protocol.parse_client(msg["text"])
-                if data["type"] == "config":
-                    cfg.update({k: data.get(k) for k in ("mood", "pitch", "bass", "rate")})
-                elif data["type"] == "text":
-                    await _run(sock, data["content"], convo, cfg, llm, tts)
-                elif data["type"] == "audio_end":
-                    pcm = np.frombuffer(bytes(audio_buf), dtype=np.float32)
-                    audio_buf.clear()
-                    text = stt.transcribe(pcm, sr=48000)
-                    if not text:
-                        await sock.send_text(protocol.status("idle", "no speech detected"))
-                        continue
-                    await sock.send_text(protocol.transcript(text))
-                    await _run(sock, text, convo, cfg, llm, tts)
+                try:
+                    data = protocol.parse_client(msg["text"])
+                    if data["type"] == "config":
+                        cfg.update({k: data.get(k) for k in ("mood", "pitch", "bass", "rate")})
+                    elif data["type"] == "text":
+                        await _run(sock, data["content"], convo, cfg, llm, tts)
+                    elif data["type"] == "audio_end":
+                        pcm = np.frombuffer(bytes(audio_buf), dtype=np.float32)
+                        audio_buf.clear()
+                        text = stt.transcribe(pcm, sr=48000)
+                        if not text:
+                            await sock.send_text(protocol.status("idle", "no speech detected"))
+                            continue
+                        await sock.send_text(protocol.transcript(text))
+                        await _run(sock, text, convo, cfg, llm, tts)
+                except WebSocketDisconnect:
+                    raise
+                except Exception as e:
+                    await sock.send_text(protocol.error(f"bad message: {e}"))
+                    continue
         except WebSocketDisconnect:
             return
 
