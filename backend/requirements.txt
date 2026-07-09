@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+websockets>=12
+faster-whisper>=1.0
+piper-tts>=1.4
+librosa>=0.10
+soundfile>=0.12
+scipy>=1.11
+numpy>=1.24
+requests>=2.31
