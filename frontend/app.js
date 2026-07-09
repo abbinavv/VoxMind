@@ -73,12 +73,17 @@ function onMessage(ev) {
   } else if (m.type === "status") {
     // While the user is actively holding the mic, our local "listening" state wins.
     if (isListening) return;
-    $("status").textContent = m.state === "idle" || !m.state
-      ? "tap the orb to speak"
-      : m.state + (m.detail ? " – " + m.detail : "");
     // Enforce turn-taking client-side: block the mic while the AI is busy.
     $("mic").disabled = (m.state === "thinking" || m.state === "speaking");
-    setOrbState(m.state);
+    // "speaking"/"idle" are driven by actual audio playback (see playPcm) so the
+    // orb stays in sync with the voice; here we only handle thinking + the label.
+    if (m.state === "thinking") {
+      $("status").textContent = "thinking" + (m.detail ? " – " + m.detail : "");
+      setOrbState("thinking");
+    } else if (m.state === "idle" && activePlaySources === 0) {
+      $("status").textContent = "tap the orb to speak";
+      setOrbState("idle");
+    }
   }
 }
 
@@ -253,8 +258,17 @@ function playPcm(buf) {
   src.buffer = audioBuf;
   src.connect(playAnalyser);
   activePlaySources++;
+  // Drive the "speaking" animation from ACTUAL playback, not the status message,
+  // so the orb pulses exactly while the voice is audible (they were out of sync
+  // because audio arrives over the tunnel after the status message).
+  if (!isListening) setOrbState("speaking");
+  $("status").textContent = "speaking";
   src.onended = () => {
     activePlaySources = Math.max(0, activePlaySources - 1);
+    if (activePlaySources === 0 && !isListening) {
+      setOrbState("idle");
+      $("status").textContent = "tap the orb to speak";
+    }
   };
   src.start();
 }
