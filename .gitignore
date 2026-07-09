@@ -1,0 +1,26 @@
+# Claude working/scratch docs — never commit
+CLAUDE.md
+NOTES.md
+TODO.md
+scratch/
+.superpowers/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+env/
+
+# Models / large binaries (downloaded at runtime in Colab)
+*.onnx
+*.onnx.json
+*.bin
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
