@@ -29,7 +29,11 @@ function onMessage(ev) {
   else if (m.type === "reply_text") addMsg(m.content, "ai");
   else if (m.type === "audio_start") playSr = m.sample_rate;
   else if (m.type === "error") addMsg("⚠ " + m.content, "ai");
-  else if (m.type === "status") $("status").textContent = m.state + (m.detail ? " – " + m.detail : "");
+  else if (m.type === "status") {
+    $("status").textContent = m.state + (m.detail ? " – " + m.detail : "");
+    // Enforce turn-taking client-side: block the mic while the AI is busy.
+    $("mic").disabled = (m.state === "thinking" || m.state === "speaking");
+  }
 }
 
 function playPcm(buf) {
