@@ -344,6 +344,47 @@ if (reduceMotion) {
   setOrbState("idle");
 }
 
+// ---------- demo mode (?demo=1): preview orb states without a backend ----------
+// Injects a synthetic audio level so listening/speaking visibly react, and adds a
+// small state cycler. Has no effect unless the page is opened with ?demo=1.
+if (new URLSearchParams(location.search).has("demo")) {
+  let demoLevel = 0;
+  const origMic = micLevel, origPlay = playLevel;
+  window.micLevel = () => (orbState === "listening" ? demoLevel : origMic());
+  window.playLevel = () => (orbState === "speaking" ? demoLevel : origPlay());
+  micLevel = window.micLevel;
+  playLevel = window.playLevel;
+  setInterval(() => {
+    demoLevel = 0.08 + Math.abs(Math.sin(Date.now() / 260)) * 0.12
+      + Math.random() * 0.03;
+  }, 60);
+
+  const bar = document.createElement("div");
+  bar.style.cssText =
+    "position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99;display:flex;gap:6px;" +
+    "background:rgba(20,26,40,.85);border:1px solid rgba(255,255,255,.15);border-radius:20px;" +
+    "padding:6px 8px;backdrop-filter:blur(8px);font:11px system-ui;color:#cfd6e6";
+  const demoTag = document.createElement("span");
+  demoTag.textContent = "DEMO";
+  demoTag.style.cssText = "align-self:center;letter-spacing:1px;color:#8892a6;padding:0 4px";
+  bar.appendChild(demoTag);
+  ["idle", "listening", "thinking", "speaking"].forEach((st) => {
+    const b = document.createElement("button");
+    b.textContent = st;
+    b.style.cssText =
+      "cursor:pointer;border:1px solid rgba(255,255,255,.15);background:transparent;color:#cfd6e6;" +
+      "border-radius:14px;padding:5px 12px;font:11px system-ui;text-transform:lowercase";
+    b.onclick = () => {
+      setOrbState(st);
+      $("status").textContent = st === "idle" ? "tap to speak" : st;
+      $("reply").textContent =
+        st === "speaking" ? "This is a demo of the speaking animation." : "";
+    };
+    bar.appendChild(b);
+  });
+  document.body.appendChild(bar);
+}
+
 // ---------- init ----------
 
 applyMood(cfg.mood);
