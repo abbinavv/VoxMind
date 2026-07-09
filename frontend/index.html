@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VoxMind</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>VoxMind</h1>
+    <div class="conn">
+      <input id="url" placeholder="wss://your-tunnel-url/ws" />
+      <button id="connect">Connect</button>
+      <span id="dot" class="dot off" title="disconnected"></span>
+    </div>
+  </header>
+
+  <main>
+    <section id="transcript" aria-live="polite"></section>
+
+    <div class="controls">
+      <div id="moods" class="moods">
+        <button data-mood="calm" class="active">Calm</button>
+        <button data-mood="happy">Happy</button>
+        <button data-mood="energetic">Energetic</button>
+        <button data-mood="empathetic">Empathetic</button>
+        <button data-mood="professional">Professional</button>
+      </div>
+      <div class="sliders">
+        <label>Pitch <input type="range" id="pitch" min="-12" max="12" step="0.5" value="0" /></label>
+        <label>Bass <input type="range" id="bass" min="-6" max="6" step="0.5" value="0" /></label>
+        <label>Rate <input type="range" id="rate" min="0.5" max="1.5" step="0.05" value="1" /></label>
+      </div>
+    </div>
+
+    <canvas id="wave" width="600" height="80"></canvas>
+
+    <div class="inputs">
+      <button id="mic">🎤 Hold to talk</button>
+      <input id="text" placeholder="Type a message…" />
+      <button id="send">Send</button>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
