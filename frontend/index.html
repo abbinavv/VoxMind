@@ -7,42 +7,88 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>VoxMind</h1>
-    <div class="conn">
-      <input id="url" placeholder="wss://your-tunnel-url/ws" />
+
+  <div class="top-bar">
+    <button id="transcript-toggle" class="icon-btn" aria-label="Show transcript" aria-expanded="false" aria-controls="transcript-panel">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M4 4h16v12H7l-3 3V4Z" opacity=".9"/></svg>
+    </button>
+    <div class="brand">VoxMind</div>
+    <button id="gear" class="icon-btn" aria-label="Connection settings" aria-expanded="false" aria-controls="settings-panel">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 .07-1 7.6 7.6 0 0 0-.07-1l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.5 7.5 0 0 0-1.73-1L14.5.5a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5l-.4 2.72a7.5 7.5 0 0 0-1.73 1l-2.39-.96a.5.5 0 0 0-.6.22L2.45 6.78a.5.5 0 0 0 .12.64L4.6 9a7.6 7.6 0 0 0 0 2l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.4.31.6.22l2.39-.96c.53.43 1.1.77 1.73 1l.4 2.72c.03.28.27.5.5.5h4c.28 0 .47-.22.5-.5l.4-2.72c.63-.23 1.2-.57 1.73-1l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64L19.4 13ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg>
+    </button>
+  </div>
+
+  <section id="settings-panel" class="panel settings-panel" hidden>
+    <h2 class="panel-title">Connection</h2>
+    <div class="settings-row">
+      <input id="url" placeholder="wss://your-tunnel-url/ws" aria-label="Backend WebSocket URL" />
       <button id="connect">Connect</button>
-      <span id="dot" class="dot off" title="disconnected"></span>
-      <span id="status" class="status"></span>
+      <span id="dot" class="dot off" role="status" aria-label="disconnected" title="disconnected"></span>
     </div>
-  </header>
+  </section>
 
-  <main>
-    <section id="transcript" aria-live="polite"></section>
+  <section id="transcript-panel" class="panel transcript-panel" hidden>
+    <h2 class="panel-title">Transcript</h2>
+    <div id="transcript" aria-live="polite"></div>
+  </section>
 
-    <div class="controls">
-      <div id="moods" class="moods">
-        <button data-mood="calm" class="active">Calm</button>
-        <button data-mood="happy">Happy</button>
-        <button data-mood="energetic">Energetic</button>
-        <button data-mood="empathetic">Empathetic</button>
-        <button data-mood="professional">Professional</button>
+  <main class="stage">
+    <div class="orb-wrap">
+      <div id="orb" class="orb">
+        <canvas id="starfield" width="360" height="360" aria-hidden="true"></canvas>
+        <div class="orb-highlight" aria-hidden="true"></div>
+        <div class="orb-rim" aria-hidden="true"></div>
+        <div class="ripples" id="ripples" aria-hidden="true">
+          <span class="ripple"></span>
+          <span class="ripple"></span>
+          <span class="ripple"></span>
+        </div>
       </div>
+    </div>
+    <p id="status" class="state-label" aria-live="polite"></p>
+  </main>
+
+  <div class="dock">
+    <div id="reply" class="dock-reply" aria-live="polite"></div>
+
+    <div class="dock-row">
+      <button id="mic" class="mic-btn" aria-label="Hold to talk">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a1 1 0 0 0-2 0 3 3 0 0 1-6 0 1 1 0 0 0-2 0 5 5 0 0 0 4 4.9V18H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-2.1A5 5 0 0 0 17 11Z"/></svg>
+      </button>
+
       <div class="sliders">
-        <label>Pitch <input type="range" id="pitch" min="-12" max="12" step="0.5" value="0" /></label>
-        <label>Bass <input type="range" id="bass" min="-6" max="6" step="0.5" value="0" /></label>
-        <label>Rate <input type="range" id="rate" min="0.5" max="1.5" step="0.05" value="1" /></label>
+        <label>Pitch
+          <input type="range" id="pitch" min="-12" max="12" step="0.5" value="0" />
+        </label>
+        <label>Bass
+          <input type="range" id="bass" min="-6" max="6" step="0.5" value="0" />
+        </label>
+        <label>Rate
+          <input type="range" id="rate" min="0.5" max="1.5" step="0.05" value="1" />
+        </label>
+      </div>
+
+      <div class="mood-select">
+        <button id="mood-btn" class="mood-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="mood-list">
+          <span id="mood-swatch" class="mood-swatch" aria-hidden="true"></span>
+          <span id="mood-label">Calm</span>
+          <span class="chev" aria-hidden="true">▾</span>
+        </button>
+        <ul id="mood-list" class="mood-list" role="listbox" aria-label="Mood" hidden>
+          <li role="option" data-mood="calm" aria-selected="true"><span class="mood-swatch" data-swatch="calm"></span>Calm</li>
+          <li role="option" data-mood="happy" aria-selected="false"><span class="mood-swatch" data-swatch="happy"></span>Happy</li>
+          <li role="option" data-mood="energetic" aria-selected="false"><span class="mood-swatch" data-swatch="energetic"></span>Energetic</li>
+          <li role="option" data-mood="empathetic" aria-selected="false"><span class="mood-swatch" data-swatch="empathetic"></span>Empathetic</li>
+          <li role="option" data-mood="professional" aria-selected="false"><span class="mood-swatch" data-swatch="professional"></span>Professional</li>
+        </ul>
       </div>
     </div>
 
-    <canvas id="wave" width="600" height="80"></canvas>
-
-    <div class="inputs">
-      <button id="mic">🎤 Hold to talk</button>
-      <input id="text" placeholder="Type a message…" />
+    <div class="dock-row text-row">
+      <input id="text" placeholder="Type a message…" aria-label="Type a message" />
       <button id="send">Send</button>
     </div>
-  </main>
+  </div>
 
   <script src="app.js"></script>
 </body>
