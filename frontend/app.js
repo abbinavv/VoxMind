@@ -15,7 +15,8 @@ let audioCtx = null;
 let micStream = null;
 let procNode = null;
 let micSampleRate = 48000;
-let cfg = { mood: "calm", pitch: null, bass: null, rate: null };
+let cfg = { mood: "auto", pitch: null, bass: null, rate: null };
+const AUTO_SWATCH = "conic-gradient(#4bb8ff, #f5b83d, #e0559f, #f07a7a, #9db4d6, #4bb8ff)";
 let playSr = 22050;
 
 // Orb / visual state
@@ -68,6 +69,8 @@ function onMessage(ev) {
     $("reply").textContent = m.content;
   } else if (m.type === "audio_start") {
     playSr = m.sample_rate;
+  } else if (m.type === "mood") {
+    showDetectedMood(m.mood);
   } else if (m.type === "error") {
     addMsg("⚠ " + m.content, "ai");
   } else if (m.type === "status") {
@@ -103,10 +106,19 @@ function applyMood(mood) {
   cfg.mood = mood;
   document.documentElement.style.setProperty("--aura", MOOD_COLORS[mood] || MOOD_COLORS.calm);
   $("mood-label").textContent = mood.charAt(0).toUpperCase() + mood.slice(1);
-  $("mood-swatch").style.background = MOOD_COLORS[mood] || MOOD_COLORS.calm;
+  $("mood-swatch").style.background = mood === "auto" ? AUTO_SWATCH : (MOOD_COLORS[mood] || MOOD_COLORS.calm);
   $("mood-list").querySelectorAll("li").forEach((li) => {
     li.setAttribute("aria-selected", li.dataset.mood === mood ? "true" : "false");
   });
+}
+
+// Auto mode: show which mood the AI detected this turn, without leaving Auto.
+function showDetectedMood(moodId) {
+  if (cfg.mood !== "auto") return;
+  const color = MOOD_COLORS[moodId] || MOOD_COLORS.calm;
+  document.documentElement.style.setProperty("--aura", color);
+  $("mood-swatch").style.background = color;
+  $("mood-label").textContent = "Auto · " + moodId.charAt(0).toUpperCase() + moodId.slice(1);
 }
 
 $("mood-btn").addEventListener("click", () => {

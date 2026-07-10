@@ -436,6 +436,9 @@ button {
   background: var(--aura);
   box-shadow: 0 0 6px 0 color-mix(in srgb, var(--aura) 80%, transparent);
 }
+.mood-list [data-swatch="auto"] {
+  background: conic-gradient(#4bb8ff, #f5b83d, #e0559f, #f07a7a, #9db4d6, #4bb8ff);
+}
 .mood-list [data-swatch="calm"] { background: #4bb8ff; }
 .mood-list [data-swatch="happy"] { background: #f5b83d; }
 .mood-list [data-swatch="energetic"] { background: #e0559f; }
