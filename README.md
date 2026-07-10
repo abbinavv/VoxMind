@@ -7,9 +7,20 @@ replies with both text and spoken audio, in one of five selectable moods
 build — no paid APIs — designed to run on a free-tier Colab GPU session with
 a separately-hosted static web frontend.
 
-This is v1: a portfolio/academic-showcase build. Turn-based conversation only
-(no mid-speech interruption / barge-in) — see [Future Enhancements](#future-enhancements)
-for what's deliberately out of scope.
+**v2 — emotion detection (Auto mood):** the mood dropdown defaults to **Auto**.
+In Auto, VoxMind detects *your* emotion each turn — from your words (classified
+by the LLM) and, on voice turns, from your voice tone (a wav2vec2
+speech-emotion model; tone wins when the two disagree) — and picks the
+best-fitting mood automatically. The UI shows what it detected ("Auto ·
+Empathetic") and the orb tints to match. Picking a specific mood locks it
+until you select Auto again. Honest caveat: free speech-emotion models are
+imperfect and will sometimes misread tone — that's why the detection is shown
+and overridable, and why the system falls back to text-only emotion whenever
+the voice model is unsure or unavailable.
+
+Turn-based conversation only (no mid-speech interruption / barge-in) — see
+[Future Enhancements](#future-enhancements) for what's deliberately out of
+scope.
 
 ## Architecture
 
@@ -97,12 +108,12 @@ _(measured latency: TBD after first E2E run)_
 
 ## Future Enhancements
 
-Deliberately out of scope for v1:
+Deliberately out of scope so far:
 
 - Mid-speech interruption (barge-in), including the echo cancellation needed
   to avoid the mic picking up the AI's own audio output.
-- Automatic emotion detection from the user's spoken input (sentiment/tone
-  analysis feeding back into mood selection).
+- ~~Automatic emotion detection from the user's spoken input~~ — **shipped in
+  v2** (Auto mood: LLM text emotion + wav2vec2 voice tone).
 - Multi-language voice support.
 - AI avatar with facial expressions.
 - Persistent user profiles and saved voice presets.
