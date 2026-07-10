@@ -16,6 +16,10 @@ def reply_text(content: str) -> str:
 def error(content: str) -> str:
     return json.dumps({"type": "error", "content": content})
 
+def mood_detected(mood: str) -> str:
+    """Per-turn auto-detected mood (sent only when the client is in Auto mode)."""
+    return json.dumps({"type": "mood", "mood": mood, "source": "auto"})
+
 def audio_start(sample_rate: int) -> str:
     return json.dumps({"type": "audio_start", "sample_rate": sample_rate})
 
