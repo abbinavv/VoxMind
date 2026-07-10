@@ -29,6 +29,11 @@ MOODS: dict[str, Mood] = {
     "professional": Mood("professional", "Professional",
         "Respond in a clear, concise, professional tone. Be precise and courteous.",
         DspParams(pitch=0.0, bass=1.0, rate=1.0)),
+    "flirty": Mood("flirty", "Flirty",
+        "Respond in a playful, flirtatious, charming tone. Be warm, teasing and "
+        "affectionate, with a hint of seduction — confident, smooth and tasteful, "
+        "never crude.",
+        DspParams(pitch=-0.5, bass=1.5, rate=0.9)),
 }
 
 def get_mood(mood_id: str) -> Mood:

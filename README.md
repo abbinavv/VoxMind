@@ -1,8 +1,8 @@
 # VoxMind
 
 VoxMind is a real-time conversational voice AI: speak or type to it, and it
-replies with both text and spoken audio, in one of five selectable moods
-(Calm, Happy, Energetic, Empathetic, Professional), with manual voice controls
+replies with both text and spoken audio, in one of six selectable moods
+(Calm, Happy, Energetic, Empathetic, Professional, Flirty), with manual voice controls
 (pitch, bass, rate) layered on top. It's a zero-budget, fully open-source
 build — no paid APIs — designed to run on a free-tier Colab GPU session with
 a separately-hosted static web frontend.

@@ -6,6 +6,7 @@ const MOOD_COLORS = {
   energetic: "#e0559f",
   empathetic: "#f07a7a",
   professional: "#9db4d6",
+  flirty: "#e02d55",
 };
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

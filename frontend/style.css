@@ -444,6 +444,7 @@ button {
 .mood-list [data-swatch="energetic"] { background: #e0559f; }
 .mood-list [data-swatch="empathetic"] { background: #f07a7a; }
 .mood-list [data-swatch="professional"] { background: #9db4d6; }
+.mood-list [data-swatch="flirty"] { background: #e02d55; }
 
 .chev { color: var(--text-dim); font-size: 11px; }
 
