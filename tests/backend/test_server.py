@@ -35,3 +35,46 @@ def test_handle_turn_records_history():
     msgs = convo.build_messages(get_mood("calm"))
     assert msgs[-2]["content"] == "hi"
     assert msgs[-1]["content"] == "AI reply."
+
+# ---- v2: Auto-mode mood selection ----
+from backend.server import select_mood
+
+class _EmotionLlm:
+    """Fake LLM whose generate() returns a fixed emotion label."""
+    def __init__(self, label):
+        self.label = label
+        self.calls = 0
+    def generate(self, messages):
+        self.calls += 1
+        return self.label
+
+class _MustNotBeCalledLlm:
+    def generate(self, messages):
+        raise AssertionError("llm should not be called in manual mood mode")
+
+def test_select_mood_manual_skips_detection():
+    cfg = {"mood": "energetic", "pitch": None, "bass": None, "rate": None}
+    mood, detected = select_mood(cfg, _MustNotBeCalledLlm(), "whatever", None)
+    assert mood.id == "energetic"
+    assert detected is None
+
+def test_select_mood_auto_uses_text_emotion():
+    cfg = {"mood": "auto", "pitch": None, "bass": None, "rate": None}
+    mood, detected = select_mood(cfg, _EmotionLlm("sad"), "I feel awful", None)
+    assert mood.id == "empathetic"
+    assert detected == "empathetic"
+
+def test_select_mood_auto_voice_wins():
+    cfg = {"mood": "auto", "pitch": None, "bass": None, "rate": None}
+    mood, detected = select_mood(cfg, _EmotionLlm("neutral"), "I'm fine", "sad")
+    assert mood.id == "empathetic"
+    assert detected == "empathetic"
+
+def test_select_mood_auto_llm_failure_degrades_to_calm():
+    class _Boom:
+        def generate(self, messages):
+            raise RuntimeError("down")
+    cfg = {"mood": "auto", "pitch": None, "bass": None, "rate": None}
+    mood, detected = select_mood(cfg, _Boom(), "hello", None)
+    assert mood.id == "calm"
+    assert detected == "calm"
