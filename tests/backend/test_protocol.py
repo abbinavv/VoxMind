@@ -19,3 +19,7 @@ def test_parse_client_config_defaults_none():
     assert parsed["type"] == "config"
     assert parsed["mood"] == "calm"
     assert parsed["pitch"] is None
+
+def test_mood_detected_message_shape():
+    msg = protocol.mood_detected("empathetic")
+    assert json.loads(msg) == {"type": "mood", "mood": "empathetic", "source": "auto"}
