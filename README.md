@@ -117,7 +117,38 @@ Deliberately out of scope so far:
 - Multi-language voice support.
 - AI avatar with facial expressions.
 - Persistent user profiles and saved voice presets.
-- Always-on hosting (replacing the ephemeral Colab session model).
+- Always-on hosting (replacing the ephemeral Colab session model) — **design
+  proposed, not yet implemented:** see
+  [`docs/superpowers/specs/2026-07-27-voxmind-auto-discovery-deploy-design.md`](docs/superpowers/specs/2026-07-27-voxmind-auto-discovery-deploy-design.md)
+  for an auto-discovery approach (Cloudflare Worker as a zero-cost URL
+  registry; frontend auto-connects to whichever Colab/Kaggle session is
+  currently active, instead of a manually pasted tunnel URL). Stays
+  zero-budget; does not achieve true 24/7 uptime, only removes the
+  copy-paste friction between rotating free-tier GPU sessions.
+
+### Known gaps (as of this audit)
+
+- **Latency is unmeasured.** The SRS sub-1-second round-trip target is a
+  stretch goal only — no E2E measurement has been recorded yet (see
+  [Latency](#latency) above).
+- **Voice-tone emotion detection is best-effort.** The wav2vec2 SER model is
+  free-tier and will misread tone sometimes; the system degrades to
+  text-only emotion when unsure or when the SER model fails to load
+  (`DISABLE_SER=1` / load failure both fall back cleanly).
+- **Single backend process, single conversation.** `backend/server.py` holds
+  one in-memory turn history; there is no multi-session/multi-user support
+  or persistence across restarts.
+- **No authentication or rate limiting** on the WebSocket endpoint — anyone
+  with the tunnel URL can connect and use the backend for the life of the
+  session.
+- **No automated frontend tests.** `tests/backend` covers backend logic only
+  (44 tests); `frontend/app.js` (447 lines) has no test coverage and is
+  verified manually.
+- **Kaggle as a second free-GPU provider is unverified.** The auto-discovery
+  design above assumes a Kaggle notebook can run the same
+  install-Ollama/Piper/cloudflared flow as Colab, but this hasn't been
+  tried hands-on yet.
+- **No CI.** Tests run locally only; nothing runs them on push/PR.
 
 ## Testing
 
